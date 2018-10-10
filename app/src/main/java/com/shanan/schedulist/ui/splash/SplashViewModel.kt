@@ -5,8 +5,10 @@ import androidx.lifecycle.MutableLiveData
 import com.shanan.schedulist.BuildConfig
 import com.shanan.schedulist.R
 import com.shanan.schedulist.base.BaseViewModel
+import com.shanan.schedulist.model.Airports
 import com.shanan.schedulist.networking.LufthansaApi
 import com.shanan.schedulist.utils.Constants
+import com.shanan.schedulist.utils.Constants.BEARER
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -19,9 +21,17 @@ class SplashViewModel : BaseViewModel() {
 
     private lateinit var subscription: Disposable
 
+    var accessToken: String? = null
+
     val loadingVisibility: MutableLiveData<Int> = MutableLiveData()
     val errorMessage: MutableLiveData<Int> = MutableLiveData()
-    val errorClickListener = View.OnClickListener { loadCities() }
+    val errorClickListener = View.OnClickListener {
+        accessToken?.let {
+            loadAirports()
+        } ?: run {
+            onAuthError()
+        }
+    }
 
     init {
         requestAccessToken()
@@ -36,20 +46,20 @@ class SplashViewModel : BaseViewModel() {
                 .doOnSubscribe { onRequestStart() }
                 .doOnTerminate { onRequestFinish() }
                 .subscribe(
-                        { onAuthSuccess() },
+                        { onAuthSuccess(it.access_token) },
                         { onAuthError() }
                 )
     }
 
-    private fun loadCities() {
-        subscription = api.getCities(20, 0)
+    private fun loadAirports() {
+
+        subscription = api.getAllAirports(BEARER.plus(accessToken))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe { onRequestStart() }
                 .doOnTerminate { onRequestFinish() }
-                .subscribe(
-                        { onRetrieveCitiesSuccess() },
-                        { onRetrieveCitiesError() }
+                .subscribe({ onRetrieveCitiesSuccess(it.airportResource.airports) },
+                        { onRetrieveCitiesError(it.message) }
                 )
     }
 
@@ -62,19 +72,20 @@ class SplashViewModel : BaseViewModel() {
         loadingVisibility.value = View.GONE
     }
 
-    private fun onAuthSuccess() {
-        loadCities()
+    private fun onAuthSuccess(token: String) {
+        accessToken = token
+        loadAirports()
     }
 
     private fun onAuthError() {
         errorMessage.value = R.string.error
     }
 
-    private fun onRetrieveCitiesSuccess() {
-
+    private fun onRetrieveCitiesSuccess(airports: Airports) {
+        println("onRetrieveCitiesSuccess")
     }
 
-    private fun onRetrieveCitiesError() {
+    private fun onRetrieveCitiesError(message: String?) {
         errorMessage.value = R.string.error
     }
 

@@ -1,7 +1,8 @@
 package com.shanan.schedulist.networking
 
+import com.shanan.schedulist.model.AirportsResponse
 import com.shanan.schedulist.model.AuthResponse
-import com.shanan.schedulist.model.CitiesResponse
+import com.shanan.schedulist.utils.Constants.AUTHORIZATION_HEADER
 import io.reactivex.Observable
 import retrofit2.http.*
 
@@ -14,8 +15,7 @@ interface LufthansaApi {
                      @Field("grant_type") grantType: String):
             Observable<AuthResponse>
 
-    @GET("references/cities")
-    fun getCities(@Query("limit") limit: Int,
-                  @Query("offset") offset: Int):
-            Observable<CitiesResponse>
+    @GET("references/airports")
+    fun getAllAirports(@Header(AUTHORIZATION_HEADER) token: String):
+            Observable<AirportsResponse>
 }

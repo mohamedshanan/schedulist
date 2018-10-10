@@ -15,6 +15,15 @@ class OkHttpClientModule {
         return OkHttpClient()
                 .newBuilder()
                 .addInterceptor(httpLoggingInterceptor)
+                .addInterceptor { chain ->
+                    val request = chain.request()
+                    val newRequest = request.newBuilder()
+                            .header("Content-Type", "application/json")
+                            .header("lang", "en")
+                            .build()
+
+                    chain.proceed(newRequest)
+                }
                 .build()
     }
 
